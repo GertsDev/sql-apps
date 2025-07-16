@@ -34,7 +34,6 @@ router.get("/type", async (req, res) => {
 router.get("/search", async (req, res) => {
   let { term, page } = req.query;
   page = page ? page : 0;
-  console.log("search ingredients", term, page);
 
   let whereClause;
   const params = [page * 5];
@@ -44,11 +43,10 @@ router.get("/search", async (req, res) => {
   }
 
   let { rows } = await pool.query(
-    `SELECT *, COUNT(*) OVER ()::INTEGER AS total_count FROM ingredients ${whereClause} OFFSET $1 LIMIT 5`,
+    `SELECT *, COUNT(*) OVER ()::INTEGER AS search_count FROM ingredients ${whereClause} OFFSET $1 LIMIT 5`,
     params
   );
   res.json({ rows }).end();
-  // res.status(501).json({ status: "not implemented", rows: [] });
 });
 
 /**

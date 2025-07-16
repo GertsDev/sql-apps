@@ -16,8 +16,8 @@ const templateResult = ({
 }) => `<li class="ingredient-result">
   <div class="result-text">${id} — ${title}</div>
   <div class="result-labels">
-    <div 
-      class="label-result label-mini-image" 
+    <div
+      class="label-result label-mini-image"
       style="background-image:url('/images/food/${image}')"
     ></div>
     <div class="label-result label-${type}"></div>
@@ -85,9 +85,12 @@ async function init() {
   formElem.addEventListener("submit", async (e) => {
     e.preventDefault();
     document.getElementById("search-results").innerHTML = "";
+
     const formData = new FormData(formElem);
     page = 0;
     const searchResults = await requestFromAPI(void 0, formData.get("term"));
+    let searchCount = searchResults[0]?.total_type ?? 0;
+    document.getElementById("search-count").textContent = searchCount;
     populateResult("search-results", searchResults, templateResult);
     togglePaginationButtons(page, searchResults[0].total_count);
   });
