@@ -65,7 +65,6 @@ WHERE rn = 1`;
 
 router.get("/get", async (req, res) => {
   const recipeId = req.query.id ? +req.query.id : 1;
-  console.log("recipe get", recipeId);
 
   const recipeBodyAndTitleQuery = `
   SELECT
@@ -75,48 +74,67 @@ router.get("/get", async (req, res) => {
  recipes
  WHERE recipe_id = $1`;
 
-  const { rows: recipeBodyAndTitle } = await pool.query(
-    recipeBodyAndTitleQuery,
-    [recipeId]
-  );
-  console.log("🚀 ~ router.get ~ recipeBodyAndTitle:", recipeBodyAndTitle);
-
-  //const bodyAndTitleCombined = { ...recipeBodyAndTitle[0] };
-  //console.log("🚀 ~ router.get ~ bodyAndTitleCombined:", bodyAndTitleCombined);
-
   const recipePhotosQuery = `
-  SELECT
-  url
+ SELECT
+ url
 FROM
 recipes_photos
 WHERE recipe_id = $1
 `;
-  const { rows: recipePhotos } = await pool.query(recipePhotosQuery, [
-    recipeId,
-  ]);
-  console.log("🚀 ~ router.get ~ recipePhotos:", recipePhotos);
 
-  const recipeIngredientsQUery = `
-  SELECT
-  i.title AS ingredient_title,
-  i.type AS ingredient_type,
-  i.image AS ingredient_image
+  const recipeIngredientsQuery = `
+SELECT
+i.title AS ingredient_title,
+i.type AS ingredient_type,
+i.image AS ingredient_image
 FROM ingredients i
 INNER JOIN recipe_ingredients ri ON ri.ingredient_id = i.id
 WHERE ri.recipe_id = $1
-  `;
+`;
 
-  const { rows: recipeIngredients } = await pool.query(recipeIngredientsQUery, [
-    recipeId,
-  ]);
-  console.log("🚀 ~ router.get ~ recipeIngredients:", recipeIngredients);
+  try {
+    const [recipeBodyAndTitle, recipePhotos, recipeIngredients] =
+      await Promise.all([
+        pool.query(recipeBodyAndTitleQuery, [recipeId]),
+        pool.query(recipePhotosQuery, [recipeId]),
+        pool.query(recipeIngredientsQuery, [recipeId]),
+      ]);
 
-  const recipe = {
-    ...recipeBodyAndTitle[0],
-    photos: recipePhotos.map((photo) => photo.url),
-    ingredients: recipeIngredients,
-  };
-  console.log("🚀 ~ router.get ~ recipe:", { recipe });
+    if (recipeBodyAndTitle.rows.length === 0) {
+      return res.status(404).json({ error: "Recipe not found" });
+    }
+
+    const photos = recipePhotos.rows.map((photo) => photo.url);
+    const ingredients = recipeIngredients.rows;
+    const recipe = {
+      ...recipeBodyAndTitle.rows[0],
+      photos: photos.length > 0 ? photos : ["default.jpg"],
+      ingredients,
+    };
+    res.status(200).json(recipe);
+  } catch (error) {
+    console.error("Error fetching recipe: ", error);
+    //res.status(500).json({ error: "Internal server error" });
+  }
+
+  const singleQuery = `SELECT
+  r.title,
+  r.body,
+  COALESCE(
+    (SELECT array_agg(rp.url) FROM recipes_photos rp WHERE rp.recipe_id = r.recipe_id),
+    ARRAY['default.jpg']::text[]
+  ) AS photos,
+  (SELECT json_agg(json_build_object(
+    'ingredient_title', i.title,
+    'ingredient_type', i.type,
+    'ingredient_image', i.image
+  ))
+  FROM ingredients i
+  INNER JOIN recipe_ingredients ri ON ri.ingredient_id = i.id
+  WHERE ri.recipe_id = r.recipe_id
+  ) AS ingredients
+FROM recipes r
+WHERE r.recipe_id = $1`;
 
   // return all ingredient rows as ingredients
   //    name the ingredient image `ingredient_image`
@@ -132,7 +150,7 @@ WHERE ri.recipe_id = $1
   // return the body as body
   // if no row[0] has no photo, return it as default.jpg
 
-  res.status(200).json(recipe);
+  //res.status(200).json(rows);
 });
 /**
  * Student code ends here
