@@ -3,8 +3,8 @@ const templateResult = ({ recipe_id, title, url }) => `
     <li class="ingredient-result">
       <div class="result-text">${recipe_id} — ${title}</div>
       <div class="result-labels">
-        <div 
-          class="label-result label-mini-image" 
+        <div
+          class="label-result label-mini-image"
           style="background-image:url('/images/food/${
             url ? url : "default.jpg"
           }')"
@@ -17,6 +17,7 @@ const requestFromAPI = async () => {
   let url = new URL(
     window.location.protocol + window.location.host + "/recipes/search"
   );
+ // console.log(url);
 
   const res = await fetch(url.toString());
   const { rows } = await res.json();

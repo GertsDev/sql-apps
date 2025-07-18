@@ -1,6 +1,7 @@
 const path = require("path");
 const express = require("express");
 const router = express.Router();
+const pg = require("pg");
 
 // client side static assets
 router.get("/", (_, res) => res.sendFile(path.join(__dirname, "./index.html")));
@@ -21,16 +22,45 @@ router.get("/detail", (_, res) =>
  * Student code starts here
  */
 
-// connect to postgres
+const pool = new pg.Pool({
+  user: "postgres",
+  host: "localhost",
+  database: "recipeguru",
+  password: "lol",
+  port: "5432",
+});
 
 router.get("/search", async function (req, res) {
   console.log("search recipes");
 
+  const query = `SELECT
+  recipe_id,
+  title,
+  COALESCE(url, 'default.jpg') AS url
+FROM (
+  SELECT
+    r.recipe_id,
+    r.title,
+    rp.url,
+    ROW_NUMBER() OVER (
+      PARTITION BY r.recipe_id
+      ORDER BY rp.url DESC -- DESC for "last" (reverse order)
+    ) AS rn
+  FROM recipes r
+  LEFT JOIN recipes_photos rp ON rp.recipe_id = r.recipe_id
+) ranked
+WHERE rn = 1`;
+
+  try {
+    const { rows } = await pool.query(query);
+    res.json({ status: "OK", rows });
+  } catch (err) {
+    console.error("search recipes", err);
+  }
+
   // return recipe_id, title, and the first photo as url
   //
   // for recipes without photos, return url as default.jpg
-
-  res.status(501).json({ status: "not implemented", rows: [] });
 });
 
 router.get("/get", async (req, res) => {

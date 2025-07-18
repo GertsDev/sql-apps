@@ -3,8 +3,8 @@ const templateResult = ({ recipe_id, title, url }) => `
     <li class="ingredient-result">
       <div class="result-text">${recipe_id} — ${title}</div>
       <div class="result-labels">
-        <div 
-          class="label-result label-mini-image" 
+        <div
+          class="label-result label-mini-image"
           style="background-image:url('/images/food/${
             url ? url : "default.jpg"
           }')"
@@ -36,7 +36,6 @@ function populateResult(elId, results, templateFn) {
 
 async function init() {
   const rows = await requestFromAPI();
-  console.log("rows", rows);
   populateResult("search-results", rows, templateResult);
 }
 
