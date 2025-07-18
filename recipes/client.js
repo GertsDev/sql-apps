@@ -17,7 +17,7 @@ const requestFromAPI = async () => {
   let url = new URL(
     window.location.protocol + window.location.host + "/recipes/search"
   );
- // console.log(url);
+  // console.log(url);
 
   const res = await fetch(url.toString());
   const { rows } = await res.json();
@@ -35,7 +35,6 @@ function populateResult(elId, results, templateFn) {
 
 async function init() {
   const rows = await requestFromAPI();
-  console.log("rows", rows);
   populateResult("search-results", rows, templateResult);
 }
 

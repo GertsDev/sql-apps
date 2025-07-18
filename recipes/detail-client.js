@@ -17,8 +17,8 @@ const templateList = ({
 }) => `<li class="detail-result ingredient-result">
 <div class="result-text">${ingredient_title}</div>
 <div class="result-labels">
-  <div 
-    class="label-result label-mini-image" 
+  <div
+    class="label-result label-mini-image"
     style="background-image:url('/images/food/${ingredient_image}')"
   ></div>
   <div class="label-result label-${ingredient_type}"></div>
@@ -36,6 +36,7 @@ const requestFromAPI = async () => {
 
   const res = await fetch(url.toString());
   const obj = await res.json();
+  console.log("🚀 ~ requestFromAPI ~ obj:", obj)
 
   return obj;
 };
